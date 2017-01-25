@@ -6,14 +6,6 @@ import time
 
 from colorama import Fore, Back
 
-settings = {
-	'host': '10.200.177.71',
-	'port': '5023',
-	'username': 'dadmin',
-	'password': 'dadmin1',
-	'pin': 'dadmin1',
-}
-
 MAJOR = '6c02ff00'
 MINOR = '6c03ff00'
 WARNINGS = '6c04ff00'
@@ -161,7 +153,7 @@ def print_warnings(wn):
 
 
 if __name__ == '__main__':
-	status = ossi.Ossi(settings)
+	status = ossi.Ossi()
 	status.connect()
 	os.system('setterm -cursor off')
 	while True:

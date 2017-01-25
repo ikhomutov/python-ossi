@@ -1,21 +1,24 @@
 import telnetlib
+#TODO: Add try-except
+import settings
 
-#TODO: Add comments
+#TODO: Add comments and docstrings
 
 CMD = 'c'
-FLD = 'f'
-DSC = 'd'
+FID = 'f'
+DATA = 'd'
+ERR = 'e'
 EOF = 't'
 END = EOF + '\n'
 
 class Ossi():
-	def __init__(self, settings):
+	def __init__(self):
 		#TODO: Add assertions
-		self.host = settings['host']
-		self.port = settings['port']
-		self.username = settings['username']
-		self.password = settings['password']
-		self.pin = settings['pin']
+		self.host = settings.HOST
+		self.port = settings.PORT
+		self.username = settings.USERNAME
+		self.password = settings.PASSWORD
+		self.pin = settings.PIN
 
 	def write_string(self, string):
 		self.tn.write(string.encode())
@@ -26,11 +29,11 @@ class Ossi():
 		self.write_string(string)
 
 	def write_field(self, field):
-		string = FLD + field
+		string = FID + field
 		self.write_string(string)
 
-	def write_descript(self, desc):
-		string = DSC + desc
+	def write_data(self, desc):
+		string = DATA + desc
 		self.write_string(string)
 
 	def write_eof(self):
@@ -42,14 +45,15 @@ class Ossi():
 
 	def parse(self, output):
 		"""
-		returns: dict
+		Returns: 
+			dict
 		{
 			'fields': {
 				1: str,
 				2: str,
 				3: str
 			},
-			'descriptors':{
+			'data':{
 				1: str,
 				2: str,
 				3: str
@@ -57,26 +61,29 @@ class Ossi():
 		}
 		"""
 		fields = {}
-		descriptors = {}
+		data = {}
 		lines = self.inline(output)
 		for line in lines:
 			if line.startswith(CMD):
 				pass
-			elif line.startswith(DSC):
-				descriptors.update({
-					len(descriptors): line[1:]
+			elif line.startswith(DATA):
+				data.update({
+					len(data): line[1:]
 				})
-			elif line.startswith(FLD):
+			elif line.startswith(FID):
 				fields.update({
 					len(fields): line[1:]
 				})
+			elif line.startswith(ERR):
+				# TODO: Add error handler
+				pass
 			elif line.startswith(EOF):
 				break
 			else:
 				pass
 		result = {
 			'fields': fields,
-			'descriptors': descriptors,
+			'data': data,
 		}
 		return result
 
@@ -84,14 +91,14 @@ class Ossi():
 		result = {}
 		parse = self.parse(output)
 		for i in range(len(parse['fields'])):
-			flds = parse['fields'][i].split('\t')
-			dscs = parse['descriptors'][i].split('\t')
-			if len(flds) != len(dscs):
-				print('ERROR')
+			fids = parse['fields'][i].split('\t')
+			data = parse['data'][i].split('\t')
+			if len(fids) != len(data):
+				# print('ERROR')
 				break
-			for i in range(len(flds)):
+			for i in range(len(fids)):
 				result.update({
-					flds[i]: dscs[i]
+					fids[i]: data[i]
 				})
 		return result
 
@@ -99,43 +106,44 @@ class Ossi():
 		result = {}
 		parse = self.parse(output)
 		fields = parse['fields']
-		descriptors = parse['descriptors']
+		data = parse['data']
 		instances = {}
 		result = {}
 		count = 0
-		while len(descriptors):
+		while len(data):
 			inc = len(result) * len(fields)
 			instance = {}
 			for key in fields:
-				instance.update({fields[key]: descriptors.pop(key + inc, None)})
+				instance.update({fields[key]: data.pop(key + inc, None)})
 			instances.update({count: instance})
 			count += 1
 		for inst in instances:
 			new_instance = {}
 			for i in inst:
 				abc = {}
-				flds = i.split('\t')
-				dscs = inst[i].split('\t')
-				if len(flds) != len(dscs):
+				fids = i.split('\t')
+				dat = inst[i].split('\t')
+				if len(fids) != len(dat):
 					print('ERROR')
 					break
-				for k in range(len(flds)):
+				for k in range(len(fids)):
 					abc.update({
-						flds[i]: dscs[i]
+						fids[i]: dat[i]
 					})
 			result.update({inst: new_instance})
 		return result
 
 	def command(self, command, params=None):
 		self.write_command(command)
+		# TODO: Add connection lost handler
 		if params:
 			fields = ''
-			descriptors = ''
+			data = ''
 			for key in params:
 				fields += '\t%s' % key
-				descriptors += '\t%s' % params[key]
+				data += '\t%s' % params[key]
 			self.write_field(fields)
-			self.write_descript(descriptors)
+			self.write_descript(data)
 		self.write_eof()
 		output_bytes = self.tn.read_until(END.encode())
 		return output_bytes.decode('utf-8')
