@@ -143,6 +143,12 @@ class Ossi():
 		output_bytes = self.tn.read_until(END.encode())
 		return output_bytes.decode('utf-8')
 
+	def list_trunks(self):
+		t = self.command('list tru')
+		parse = self.parse(t)
+		result = self.multiple_to_dict(parse)
+		return result
+
 	def connect(self):
 		self.tn = telnetlib.Telnet(self.host, self.port)
 		self.tn.read_until('login'.encode())
