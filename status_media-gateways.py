@@ -155,41 +155,37 @@ def print_warnings(wn):
 if __name__ == '__main__':
 	status = ossi.Ossi()
 	status.connect()
-	os.system('setterm -cursor off')
-	while True:
-		t = status.command('sta media-g')
-		output = status.single_to_dict(t)
-		general = {}
-		gates = []
-		for key in output:
-			if key in MAPPING:
-				if key in GENERAL_INFORMATION:
-					general.update({MAPPING[key]: output[key]})
-				elif output[key]:
-					gates.append(parse_gate_info(output[key]))
-		os.system('clear')
-		print('ALARMS SUMMARY')
-		print('%s => %s' % (MAPPING[MAJOR], general[MAPPING[MAJOR]]))
-		print('%s => %s' % (MAPPING[MINOR], general[MAPPING[MINOR]]))
-		print('%s => %s' % (MAPPING[WARNINGS], general[MAPPING[WARNINGS]]))
-		print('\nGATEWAY STATUS')
-		for gate in gates:
-			if gate[MG_Lk]:
-				print('MG {MG}: {Mj} {Mn} {Wn}'.format(
-					MG=gate[MG_MG], 
-					Mj=print_major_alarms(gate[MG_Mj]), 
-					Mn=print_minor_alarms(gate[MG_Mn]), 
-					Wn=print_warnings(gate[MG_Wn])
-				))
-			else:
-				print(
-					Back.RED + 
-					Fore.WHITE + 
-					'MG ' + 
-					str(gate[MG_MG]) + 
-					' is DOWN' + 
-					Back.RESET + 
-					Fore.RESET
-				)
-		time.sleep(5)
+	t = status.command('sta media-g')
+	parse = status.parse(t)
+	output = status.single_to_dict(parse)
+	general = {}
+	gates = []
+	for key in output:
+		if key in MAPPING:
+			if key in GENERAL_INFORMATION:
+				general.update({MAPPING[key]: output[key]})
+			elif output[key]:
+				gates.append(parse_gate_info(output[key]))
+	print('ALARMS SUMMARY')
+	for info in GENERAL_INFORMATION:
+		print('%s => %s' % (MAPPING[info], general[MAPPING[info]]))
+	print('\nGATEWAY STATUS')
+	for gate in gates:
+		if gate[MG_Lk]:
+			print('MG {MG}: {Mj} {Mn} {Wn}'.format(
+				MG=gate[MG_MG], 
+				Mj=print_major_alarms(gate[MG_Mj]), 
+				Mn=print_minor_alarms(gate[MG_Mn]), 
+				Wn=print_warnings(gate[MG_Wn])
+			))
+		else:
+			print(
+				Back.RED + 
+				Fore.WHITE + 
+				'MG ' + 
+				str(gate[MG_MG]) + 
+				' is DOWN' + 
+				Back.RESET + 
+				Fore.RESET
+			)
 	status.disconnect()

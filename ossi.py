@@ -87,9 +87,8 @@ class Ossi():
 		}
 		return result
 
-	def single_to_dict(self, output):
+	def single_to_dict(self, parse):
 		result = {}
-		parse = self.parse(output)
 		for i in range(len(parse['fields'])):
 			fids = parse['fields'][i].split('\t')
 			data = parse['data'][i].split('\t')
@@ -102,35 +101,31 @@ class Ossi():
 				})
 		return result
 
-	def multiple_to_dict(self, output):
-		result = {}
-		parse = self.parse(output)
+	def multiple_to_dict(self, parse):
 		fields = parse['fields']
 		data = parse['data']
 		instances = {}
 		result = {}
 		count = 0
+
 		while len(data):
-			inc = len(result) * len(fields)
-			instance = {}
+			inc = count * len(fields)
+			instance_data = {}
 			for key in fields:
-				instance.update({fields[key]: data.pop(key + inc, None)})
+				instance_data.update({
+					key: data.pop(key + inc, None)
+					})
+			instance = {
+				'fields': fields,
+				'data': instance_data
+			}
 			instances.update({count: instance})
 			count += 1
 		for inst in instances:
-			new_instance = {}
-			for i in inst:
-				abc = {}
-				fids = i.split('\t')
-				dat = inst[i].split('\t')
-				if len(fids) != len(dat):
-					print('ERROR')
-					break
-				for k in range(len(fids)):
-					abc.update({
-						fids[i]: dat[i]
-					})
-			result.update({inst: new_instance})
+			result.update({
+				inst: self.single_to_dict(instances[inst])
+				})
+
 		return result
 
 	def command(self, command, params=None):

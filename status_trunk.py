@@ -1,34 +1,39 @@
-import colorama
 import os
 import ossi
+import re
 import sys
 import time
 
+from colorama import Fore, Back
 
-settings = {
-	'host': '10.200.177.71',
-	'port': '5023',
-	'username': 'dadmin',
-	'password': 'dadmin1',
-	'pin': 'dadmin1',
-}
+MEMBER = '0001ff00'
+PORT = '0002ff00'
+STATE = '0003ff00'
+MTCE = '0004ff00'
+CONNECTED = '0005ff00'
+
 
 MAPPING = {
-	'6c02ff00': 'Major',
-	'6c08ff00': 'Trunks',
-	'6c0aff00': 'Links Down',
-	'6c0cff00': '# Logins',
-	'6c03ff00': 'Minor',
-	'6c0bff00': 'Links Up',
-	'6c04ff00': 'Warnings',
+	MEMBER: 'Member',
+	PORT: 'Port',
+	STATE: 'State',
+	MTCE: 'Mtce',
+	CONNECTED: 'Connected ports',
+	'3e81ff00': 'Unknown',
+	'3e82ff00': 'Unknown',
+	'3e83ff00': 'Unknown',
 }
 
+
 if __name__ == '__main__':
-	test = ossi.Ossi(settings)
-	test.connect()
-	t = test.command('sta tru 1')
-	import ipdb
-	ipdb.set_trace()
-	output = test.multiple_to_dict(t)
-	print(output)
-	test.disconnect()
+	status = ossi.Ossi()
+	status.connect()
+	t = status.command('sta tru 2')
+	parse = status.parse(t)
+
+	result = status.multiple_to_dict(parse)
+	for i in range(len(result)):
+		member = result[i]
+		print('%s(%s) => %s' % (member[MEMBER], member[PORT], member[STATE]))
+
+	status.disconnect()
